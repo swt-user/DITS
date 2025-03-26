@@ -1,0 +1,36 @@
+beta: 0.5
+bf16: true
+dataset_mixer:
+  /data/group_data/cx_group/MCTS-agent/my_datasets/mwh_qa_sft_dpo_scale/dpo_6_8/mwh_qa_dpo_mix_warmup_20494/iteration_0: 1.0
+dataset_splits:
+- train
+- test
+do_eval: true
+eval_steps: 1000
+evaluation_strategy: steps
+gradient_accumulation_steps: 8
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+learning_rate: 5.0e-07
+log_level: info
+logging_steps: 10
+lr_scheduler_type: cosine
+max_length: 4096
+max_prompt_length: 1024
+model_name_or_path: /data/group_data/cx_group/MCTS-agent/checkpoints/mwh_qa_sft_dpo/sft_iteration_0
+model_revision: main
+num_train_epochs: 1
+optim: adamw_torch
+output_dir: /data/group_data/cx_group/MCTS-agent/checkpoints/mwh_qa_sft_dpo_scale/dpo_iteration_0_scale_6_8_mix_warmup_20494/iteration_0
+per_device_eval_batch_size: 1
+per_device_train_batch_size: 1
+preprocessing_num_workers: 8
+save_strategy: 'steps'
+save_steps: 100
+save_total_limit: 1
+seed: 42
+tokenizer_name_or_path: /home/wentaos/.cache/huggingface/hub/models--meta-llama--Meta-Llama-3-8B-Instruct/snapshots/5f0b02c75b57c5855da9ae460ce51323ea669d8a
+torch_dtype: bfloat16
+use_flash_attention_2: true
+warmup_ratio: 0.1

@@ -1,0 +1,34 @@
+beta: 0.5
+bf16: true
+dataset_mixer:
+  /data/user_data/wentaos/Optima/my_datasets/cbt_dpo_MATES_warmup_10K/iteration_0: 1.0
+dataset_splits:
+- train
+- test
+do_eval: true
+eval_steps: 100
+evaluation_strategy: steps
+gradient_accumulation_steps: 8
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+learning_rate: 5.0e-07
+log_level: info
+logging_steps: 10
+lr_scheduler_type: cosine
+max_length: 4096
+max_prompt_length: 1024
+model_name_or_path: /data/user_data/wentaos/optima-checkpoints/cbt_sft/iteration_0
+model_revision: main
+num_train_epochs: 1
+optim: adamw_torch
+output_dir: /data/user_data/wentaos/optima-checkpoints/cbt_dpo_MATES_warmup_10K/dpo_iteration_0
+per_device_eval_batch_size: 1
+per_device_train_batch_size: 1
+preprocessing_num_workers: 8
+save_strategy: 'no'
+seed: 42
+tokenizer_name_or_path: /home/wentaos/.cache/huggingface/hub/models--meta-llama--Meta-Llama-3-8B-Instruct/snapshots/5f0b02c75b57c5855da9ae460ce51323ea669d8a
+torch_dtype: bfloat16
+use_flash_attention_2: true
+warmup_ratio: 0.1

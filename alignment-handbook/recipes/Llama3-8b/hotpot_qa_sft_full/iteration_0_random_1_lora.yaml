@@ -1,0 +1,53 @@
+# LoRA arguments
+load_in_4bit: true
+use_peft: true
+lora_r: 32
+lora_alpha: 32
+lora_dropout: 0.05
+lora_target_modules:
+- q_proj
+- k_proj
+- v_proj
+- o_proj
+- gate_proj
+- up_proj
+- down_proj
+
+bf16: true
+dataset_kwargs:
+  add_special_tokens: false
+  append_concat_token: false
+dataset_mixer:
+  /data/user_data/wentaos/Optima/my_datasets/hotpot_qa_sft_full/iteration_0: 1.0
+dataset_splits:
+- train
+- test
+do_eval: true
+evaluation_strategy: epoch
+gradient_accumulation_steps: 4
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+learning_rate: 5.0e-05
+log_level: info
+logging_steps: 5
+logging_strategy: steps
+lr_scheduler_type: cosine
+max_seq_length: 2048
+max_steps: -1
+model_name_or_path: /home/wentaos/.cache/huggingface/hub/models--meta-llama--Meta-Llama-3-8B-Instruct/snapshots/5f0b02c75b57c5855da9ae460ce51323ea669d8a
+model_revision: main
+num_train_epochs: 3
+output_dir: /data/user_data/wentaos/optima-checkpoints/hotpot_qa_sft_fullrandom_1_lora/iteration_0
+overwrite_output_dir: true
+per_device_eval_batch_size: 1
+per_device_train_batch_size: 1
+preprocessing_num_workers: 8
+push_to_hub: false
+remove_unused_columns: true
+save_strategy: 'no'
+seed: 42
+tokenizer_name_or_path: /home/wentaos/.cache/huggingface/hub/models--meta-llama--Meta-Llama-3-8B-Instruct/snapshots/5f0b02c75b57c5855da9ae460ce51323ea669d8a
+torch_dtype: bfloat16
+use_flash_attention_2: true
+warmup_ratio: 0.1

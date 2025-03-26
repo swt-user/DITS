@@ -1,0 +1,18 @@
+lora_path: "/data/user_data/wentaos/optima-checkpoints/hotpot_qa_dpo_test_lora_case0/dpo_iteration_0"
+# The student model without warmup; i.e. a repo name on huggingface (TinyLlama/TinyLlama_v1.1)
+model_name_or_path: '/data/user_data/wentaos/optima-checkpoints/hotpot_qa_sft/iteration_0'
+tokenizer_path: '/home/wentaos/.cache/huggingface/hub/models--meta-llama--Meta-Llama-3-8B-Instruct/snapshots/5f0b02c75b57c5855da9ae460ce51323ea669d8a'
+# The warmup student model checkpoint path
+warm_up_path:  
+train_args:
+  # probing dataset path; we only calculate the local data influence on this dataset
+  data_path: /data/user_data/wentaos/Optima/results/hotpot_qa_dpo_test_full/iteration_0_case0.jsonl
+  num_gpus: 1
+eval_args:
+  # the default reference dataset path used in Montessori-Instruct; you can also specify your own reference dataset path
+  data_path: /home/wentaos/Optima/results/hotpot_qa_dpo_test/iteration_0_dpo_format.jsonl
+  # the number of samples in the reference dataset
+  eval_nums: 256
+  batch_size: 8
+# after collecting the local data influence, we save them as a new column in the probing dataset and rename it as score_dataset; this is the path to save the score_dataset
+scores_dataset_path: /home/wentaos/Optima/local_influence/dataset

@@ -1,0 +1,1 @@
+0: margins:0.3040; accuracies: 0.6652; loss: 0.9830 

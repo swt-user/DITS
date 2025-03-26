@@ -1,0 +1,51 @@
+beta: 0.1
+bf16: true
+dataset_mixer:
+  /data/group_data/cx_group/MCTS-agent/my_datasets/hotpot_qa_sft_dpo_DI/dpo/iteration_0: 1.0
+dataset_splits:
+- train
+- test
+do_eval: true
+end_point: 300
+eval_num: 150
+eval_steps: 100
+evaluation_strategy: steps
+gradient_accumulation_steps: 8
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+learning_rate: 5.0e-05
+load_in_4bit: true
+log_level: info
+logging_steps: 10
+lora_alpha: 32
+lora_dropout: 0.05
+lora_r: 32
+lora_target_modules:
+- q_proj
+- k_proj
+- v_proj
+- o_proj
+- gate_proj
+- up_proj
+- down_proj
+lr_scheduler_type: cosine
+max_length: 4096
+max_prompt_length: 1024
+model_name_or_path: /data/group_data/cx_group/MCTS-agent/checkpoints/hotpot_qa_sft_dpo_DI_lora/dpo_iteration_0/checkpoint-50
+model_revision: main
+num_train_epochs: 1
+optim: adamw_torch
+output_dir: /data/group_data/cx_group/MCTS-agent/checkpoints/hotpot_qa_sft_dpo_DI_lora/dpo_iteration_0
+per_device_eval_batch_size: 1
+per_device_train_batch_size: 1
+preprocessing_num_workers: 8
+save_strategy: 'no'
+seed: 42
+start_point: 0
+step_num: 5
+tokenizer_name_or_path: /home/wentaos/.cache/huggingface/hub/models--meta-llama--Meta-Llama-3-8B-Instruct/snapshots/5f0b02c75b57c5855da9ae460ce51323ea669d8a
+torch_dtype: bfloat16
+use_flash_attention_2: true
+use_peft: true
+warmup_steps: 0
