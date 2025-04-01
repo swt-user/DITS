@@ -12,6 +12,7 @@ from dataloader.dataloader import (
     DataloaderForTrivalQA,
     DataloaderForARC,
     DataloaderForMMLU,
+    DataloaderForMBPP,
 )
 import time
 import os
@@ -73,6 +74,9 @@ def get_dataloader(dataset_type):
     elif dataset_type == "mmlu":
         print("mmlu")
         loader = DataloaderForMMLU(split="test")
+    elif dataset_type == "mbpp":
+        print("mbpp")
+        loader = DataloaderForMBPP(split="test")
     return loader
 
 if __name__ == "__main__":
@@ -93,7 +97,7 @@ if __name__ == "__main__":
                 f"""
             source ~/.bashrc && \
             conda activate {args.vllm_env} && \
-            CUDA_VISIBLE_DEVICES={0} vllm serve {model_path} --host 0.0.0.0 --port {args.port+0} --served-model-name "Llama-3" --enable-prefix-caching --dtype float32
+            CUDA_VISIBLE_DEVICES={0} vllm serve {model_path} --host 0.0.0.0 --port {args.port+0} --served-model-name "Llama-3" --enable-prefix-caching 
             """,
                 shell=True,
             )
@@ -107,7 +111,7 @@ if __name__ == "__main__":
                     f"""
                 source ~/.bashrc && \
                 conda activate {args.vllm_env} && \
-                CUDA_VISIBLE_DEVICES={args.device+i} vllm serve {model_path} --host 0.0.0.0 --port {args.port+i} --served-model-name "Llama-3" --enable-prefix-caching --dtype float32
+                CUDA_VISIBLE_DEVICES={args.device+i} vllm serve {model_path} --host 0.0.0.0 --port {args.port+i} --served-model-name "Llama-3" --enable-prefix-caching 
                 """,
                     shell=True,
                 )

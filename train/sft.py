@@ -11,6 +11,7 @@ from dataloader.dataloader import (
     DataloaderForARC,
     DataloaderForMix,
     DataloaderForMMLU,
+    DataloaderForMBPP,
 )
 import os
 import yaml
@@ -112,6 +113,10 @@ def sft_train_v2(
         print("mmlu")
         score_type = "exact-match"
         loader = DataloaderForMMLU(split="auxiliary_train")
+    elif dataset_type == "mbpp":
+        print("mbpp")
+        loader = DataloaderForMBPP(split="train")
+        score_type = "code"
     elif dataset_type == "mix":
         print("mix")
         score_type = "mix"

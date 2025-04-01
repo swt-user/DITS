@@ -12,6 +12,7 @@ from dataloader.dataloader import (
     DataloaderForTrivalQA,
     DataloaderForARC,
     DataloaderForMMLU,
+    DataloaderForMBPP,
 )
 import time
 import os
@@ -74,6 +75,9 @@ def get_dataloader(dataset_type):
     elif dataset_type == "mmlu":
         print("mmlu")
         loader = DataloaderForMMLU(split="test")
+    elif dataset_type == "mbpp":
+        print("mbpp")
+        loader = DataloaderForMBPP(split="test")
     return loader
     
 

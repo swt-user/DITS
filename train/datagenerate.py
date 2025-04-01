@@ -1,10 +1,10 @@
 from dataloader.dataloader import DataloaderForHotpotQA, load_dpo_dataloader
 from agent.agent import Agent, VllmAgent, BaseAgent
-from model.llm import Llama3
+from model.llm import Llama3, QwenLLM
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
 from dataloader.dataloader import DataloaderForHotpotQA
 from message.message import llmMessage
-from answerParser.parser import hotpot_qa_parser, math_parser
+from answerParser.parser import hotpot_qa_parser, math_parser, code_parser
 from typing import List
 from utils.utils_token import cal_token
 from utils.prompt_template import *
@@ -45,10 +45,15 @@ def data_generate(
         model_path_second, torch_dtype="auto", attn_implementation="flash_attention_2"
     )
 
-    llm_first = Llama3(
+    if "Llama" in os.environ["INITIAL_MODEL_PATH"]:
+        MyLLM = Llama3
+    elif "Qwen" in os.environ["INITIAL_MODEL_PATH"]:
+        MyLLM = QwenLLM
+
+    llm_first = MyLLM(
         device=device_first, model=model_first, tokenizer=tokenizer_first
     )
-    llm_second = Llama3(
+    llm_second = MyLLM(
         device=device_second, model=model_second, tokenizer=tokenizer_second
     )
 
@@ -182,8 +187,15 @@ def vllm_data_generate(
         torch_dtype="auto",
         attn_implementation="flash_attention_2",
     )
-    tokenizer_first.chat_template = """{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}{% endif %}{%- if is_alice %}\n    {{- \'Alice:\' }}\n{%- endif %}\n{%- if is_bob %}\n    {{- \'Bob:\' }}\n{%- endif %}"""
-    tokenizer_second.chat_template = """{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}{% endif %}{%- if is_alice %}\n    {{- \'Alice:\' }}\n{%- endif %}\n{%- if is_bob %}\n    {{- \'Bob:\' }}\n{%- endif %}"""
+
+    if "Llama" in os.environ["INITIAL_MODEL_PATH"]: 
+        chat_template = """{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}{% endif %}{%- if is_alice %}\n    {{- \'Alice:\' }}\n{%- endif %}\n{%- if is_bob %}\n    {{- \'Bob:\' }}\n{%- endif %}"""
+    elif "Qwen" in os.environ["INITIAL_MODEL_PATH"]: 
+        chat_template = """{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|im_start|>' + message['role'] + '<|im_end|>\n\n'+ message['content'] | trim + '<|im_end|>' %}{% if loop.index0 == 0 %}{% set content = content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant<|im_end|>\n\n' }}{% endif %}{%- if is_alice %}\n    {{- 'Alice:' }}\n{%- endif %}\n{%- if is_bob %}\n    {{- 'Bob:' }}\n{%- endif %}"""
+    
+    tokenizer_first.chat_template = chat_template
+    tokenizer_second.chat_template = chat_template
+    
     record_set = set()
     skipping = 0
     try:
@@ -251,6 +263,25 @@ def vllm_data_generate(
                     first_prompt
                     + """\n 3. You must begin your response with \"${name}:\"."""
                 )
+    elif dataloader.data_type == "code":
+        the_prompt = prompt_multi_code
+        # no_use_prompt_pool = True
+        is_debate = True
+        first_prompt = prompt_multi_mbpp_first
+        second_prompt = prompt_multi_mbpp_second
+        if iteration == 0:
+            second_prompt = (
+                second_prompt
+                + """\n 3. You must begin your response with \"${name}:\"."""
+            )
+            if (
+                "You must begin your response with" not in first_prompt
+                and "You should start your utterance with" not in first_prompt
+            ):
+                first_prompt = (
+                    first_prompt
+                    + """\n 3. You must begin your response with \"${name}:\"."""
+                )
     prompt_pool = []
     if not no_use_prompt_pool:
         with open(prompt_pool_path, "r") as fin:
@@ -263,6 +294,7 @@ def vllm_data_generate(
         and dataloader.data_type != "mix"
         and dataloader.split == "test"
         and dataloader.dataset_name != "mmlu" ### new add
+        and dataloader.dataset_name != 'mbpp'
     ):
         sample_count = dataloader.total
     for i in range(0, sample_count):
@@ -307,6 +339,12 @@ def vllm_data_generate(
                 prompt_pool_path = "/home/test/test04/yuanjiarui/project/src/utils/prompts_arc_first.jsonl"
                 first_prompt = prompt_multi_arc_first
                 second_prompt = prompt_multi_arc_second
+            elif data_type == "code":
+                the_prompt = prompt_multi_code
+                is_debate = True
+                prompt_pool_path = "/home/test/test04/yuanjiarui/project/src/utils/prompts_arc_first.jsonl"
+                first_prompt = prompt_multi_mbpp_first
+                second_prompt = prompt_multi_mbpp_second
             prompt_pool = []
             if not no_use_prompt_pool:
                 with open(prompt_pool_path, "r") as fin:
@@ -481,6 +519,8 @@ def vllm_data_generate_once(
             score_type = "exact-match"
         elif data_type == "math":
             score_type = "exact-match"
+        elif data_type == "code":
+            score_type = "code"
 
         results_list.append(
             {
@@ -527,15 +567,18 @@ def conversation(agent_list: List[BaseAgent], tokenizer, question, data_type="qa
         if data_type != "qa" and (not (content.strip().startswith(f"{agent.name}"))):
             content = f"{agent.name}:{content}"
         response_list.append(content)
-        # print(
-        #     f"""
-        #     --------------------------------------------\n
-        #     {content}
-        #     --------------------------------------------\n
-        #     """
-        # )
+        print(
+            f"""
+            --------------------------------------------\n
+            {content}
+            --------------------------------------------\n
+            """
+        )
         if data_type == "math":
             tmp_answer = math_parser(response)
+        elif data_type == "code":
+            tmp_answer = code_parser(response)
+            print(f"tmp_answer: {tmp_answer}")
         else:
             tmp_answer = hotpot_qa_parser(response)
         # print(f"tmp_answer: {tmp_answer}")

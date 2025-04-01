@@ -12,6 +12,7 @@ from dataloader.dataloader import (
     DataloaderForTrivalQA,
     DataloaderForARC,
     DataloaderForMMLU,
+    DataloaderForMBPP,
 )
 import time
 import os
@@ -73,11 +74,14 @@ def get_dataloader(dataset_type):
     elif dataset_type == "mmlu":
         print("mmlu")
         loader = DataloaderForMMLU(split="test")
+    elif dataset_type == "mbpp":
+        print("mbpp")
+        loader = DataloaderForMBPP(split="test")
     return loader
 
 if __name__ == "__main__":
-    models = os.listdir(args.model_root_path)
-    models = [(model, os.path.join(args.model_root_path, model)) for model in models if "lr" not in model]
+    # models = os.listdir(args.model_root_path)
+    models = [(os.path.basename(args.model_root_path), args.model_root_path)]
     # model_paths = [("base",llama3_path_a800)]
     model_paths = []
     model_paths.extend(models)
@@ -93,7 +97,7 @@ if __name__ == "__main__":
                 f"""
             source ~/.bashrc && \
             conda activate {args.vllm_env} && \
-            CUDA_VISIBLE_DEVICES={0} vllm serve {model_path} --host 0.0.0.0 --port {args.port+0} --served-model-name "Llama-3" --enable-prefix-caching --dtype float32
+            CUDA_VISIBLE_DEVICES={0} vllm serve {model_path} --host 0.0.0.0 --port {args.port+0} --served-model-name "Llama-3" --enable-prefix-caching 
             """,
                 shell=True,
             )
@@ -107,7 +111,7 @@ if __name__ == "__main__":
                     f"""
                 source ~/.bashrc && \
                 conda activate {args.vllm_env} && \
-                CUDA_VISIBLE_DEVICES={args.device+i} vllm serve {model_path} --host 0.0.0.0 --port {args.port+i} --served-model-name "Llama-3" --enable-prefix-caching --dtype float32
+                CUDA_VISIBLE_DEVICES={args.device+i} vllm serve {model_path} --host 0.0.0.0 --port {args.port+i} --served-model-name "Llama-3" --enable-prefix-caching 
                 """,
                     shell=True,
                 )
@@ -137,7 +141,7 @@ if __name__ == "__main__":
 
         if not os.path.exists(args.output_root_path):
             os.makedirs(args.output_root_path)
-        for step in range(3):
+        for step in range(1):
             set_seed_everything()
             loader = get_dataloader(args.dataset_type)
             inference(
@@ -147,7 +151,7 @@ if __name__ == "__main__":
                 f"http://0.0.0.0:{args.port}/v1/chat/completions",
                 args.tokenizer_path,
                 args.tokenizer_path,
-                sample_count=1000,
+                sample_count=500,
                 explore_count=1,
                 output_path=os.path.join(args.output_root_path, f"{model}_{step}.jsonl"),
                 thread_count=args.num_thread,

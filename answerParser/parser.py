@@ -47,6 +47,14 @@ def math_parser(response: llmMessage):
     else:
         return None
 
+def code_parser(response: llmMessage):
+    text = response.content
+    try:
+        code_block: str = re.findall(f'```python\n(.*?)```', text, re.DOTALL | re.IGNORECASE)[0]
+        return code_block
+    except Exception as ex:
+        print("Failed to extract codeblock:\n{}".format(text))
+        return None
 
 def doc_to_text(doc: dict) -> str:
     return "Problem:" + "\n" + doc["problem"] + "\n\n" + "Solution:"

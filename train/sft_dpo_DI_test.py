@@ -11,6 +11,7 @@ from dataloader.dataloader import (
     DataloaderForTrivalQA,
     DataloaderForARC,
     DataloaderForMMLU,
+    DataloaderForMBPP,
 )
 from datasets import load_from_disk
 import os
@@ -206,6 +207,10 @@ def sft_dpo_train_v2_DI(
         print("mmlu")
         loader = DataloaderForMMLU(split="auxiliary_train")
         score_type = "exact-match"
+    elif dataset_type == "mbpp":
+        print("mbpp")
+        loader = DataloaderForMBPP(split="train")
+        score_type = "code"
 
     num_device = int(devices) + 1
     for _ in range(skipping):

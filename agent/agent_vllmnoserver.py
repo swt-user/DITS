@@ -221,11 +221,17 @@ class VllmAgent(BaseAgent):
             or "You must begin your response with" in self.system_prompt.content
         ):
             is_iteration_0 = True
+
+        if "Llama" in os.environ["INITIAL_MODEL_PATH"]: 
+            chat_template = """{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}{% endif %}{%- if is_alice %}\n    {{- \'Alice:\' }}\n{%- endif %}\n{%- if is_bob %}\n    {{- \'Bob:\' }}\n{%- endif %}"""
+        elif "Qwen" in os.environ["INITIAL_MODEL_PATH"]: 
+            chat_template = """{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|im_start|>' + message['role'] + '<|im_end|>\n\n'+ message['content'] | trim + '<|im_end|>' %}{% if loop.index0 == 0 %}{% set content = content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant<|im_end|>\n\n' }}{% endif %}{%- if is_alice %}\n    {{- 'Alice:' }}\n{%- endif %}\n{%- if is_bob %}\n    {{- 'Bob:' }}\n{%- endif %}"""
+        
         data_json = {
             "model": self.my_model_name,
             "messages": message_input,
             "temperature": self.temperature,
-            "chat_template": """{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}{% endif %}{%- if is_alice %}\n    {{- \'Alice:\' }}\n{%- endif %}\n{%- if is_bob %}\n    {{- \'Bob:\' }}\n{%- endif %}""",
+            "chat_template": chat_template,
             "chat_template_kwargs": {
                 "is_alice": (self.name == "Alice") and (not is_iteration_0),
                 "is_bob": (self.name == "Bob") and (not is_iteration_0),

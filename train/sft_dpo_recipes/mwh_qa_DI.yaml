@@ -29,4 +29,6 @@ monte_sample_count: 12000
 cal_ppl: 1
 lambda1: -0.6
 lambda2: 1
+explore_time: 8
+expand_time: 3
 from_initial: False

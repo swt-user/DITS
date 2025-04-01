@@ -12,6 +12,7 @@ from dataloader.dataloader import (
     DataloaderForTrivalQA,
     DataloaderForARC,
     DataloaderForMMLU,
+    DataloaderForMBPP,
 )
 import time
 import os
@@ -78,6 +79,9 @@ def get_dataloader(dataset_type):
         print("mmlu")
         score_type = "exact-match"
         loader = DataloaderForMMLU(split="auxiliary_train", current_id=15000)
+    elif dataset_type == "mbpp":
+        print("mbpp")
+        loader = DataloaderForMBPP(split="validation")
     
     return loader
     

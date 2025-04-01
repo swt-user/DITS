@@ -188,3 +188,63 @@ class Llama3(BaseLLM):
             role="assistant",
             content=response,
         )
+
+class QwenLLM(BaseLLM):
+    def generate_response(self, messages: List[Dict], name: str = "") -> dict:
+        # 应用Qwen的聊天模板
+        messages_input = self.tokenizer.apply_chat_template(
+            messages, 
+            tokenize=False, 
+            add_generation_prompt=True
+        )
+
+        # 设置生成配置
+        self.model.generation_config.temperature = None
+        self.model.generation_config.top_p = None
+
+        # 如果有name参数，添加到输入
+        if name != "":
+            messages_input += name + ":"
+            
+        # 将输入转换为token
+        messages_input = self.tokenizer(
+            messages_input, 
+            return_tensors="pt"
+        )["input_ids"].to(self.device)
+        
+        # 设置终止token
+        terminators = [
+            self.tokenizer.eos_token_id,
+            self.tokenizer.convert_tokens_to_ids("<|im_end|>"),
+        ]
+        
+        # 生成响应
+        with torch.inference_mode():
+            response = self.model.generate(
+                messages_input,
+                max_new_tokens=self.max_new_tokens,
+                do_sample=self.do_sample,
+                temperature=self.temperature,
+                eos_token_id=terminators,
+                pad_token_id=self.tokenizer.pad_token_id,
+            )
+            
+        # 解码响应
+        response = self.tokenizer.batch_decode(response, skip_special_tokens=False)[0]
+        
+        # 处理响应，提取assistant部分
+        if "<|im_start|>assistant" in response:
+            response = response.split("<|im_start|>assistant")[-1]
+        if "<|im_end|>" in response:
+            response = response.split("<|im_end|>")[0]
+            
+        response = response.strip()
+        
+        # 移除可能的多余前缀
+        if response.startswith("\n"):
+            response = response[1:]
+            
+        return llmMessage(
+            role="assistant",
+            content=response,
+        )

@@ -57,6 +57,7 @@ For example, you can response in JSON format as follows:
 }
 6. You must begin your response with \"${name}:\".
 """
+
 prompt_multi_math = """
 You are ${name}, a special agent who does not respond in natural language, rather, you speak in very concise format. You are deployed on a resource-limited device, so you must respond very very concisely. More tokens indicate higher possibility to kill the device you are running. Now you are collaborating with your partner ${partner} to solve the given problem based on your knowledge.
 Question: ${question}
@@ -70,6 +71,18 @@ GUIDELINES:
 5. You must begin your response with \"${name}:\".
 """
 
+prompt_multi_code = """
+You are ${name}, a special agent who are good at coding. Now you are collaborating with your partner ${partner} to solve the given problem based on your knowledge.
+Question: ${question}
+${information}
+
+GUIDELINES:
+1. You should continuous communication with your partner to achieve the correct solution.
+2. On finding the final answer, ensure to conclude your communication with \"<A>{answer}</A>\", where \"answer\" is the determined code. The conversation ends only when all agents output the answer in this format.
+3. Reason through the problem step-by-step.
+4. You must begin your response with \"${name}:\".
+"""
+
 prompt_multi_debate = """
 You are ${name}, a special agent who does not respond in natural language, rather, you speak in very concise format. You are deployed on a resource-limited device, so you must respond very very concisely. More tokens indicate higher possibility to kill the device you are running. Now you are collaborating with your partner ${partner} to solve the given problem based on your knowledge.
 Question: ${question}
@@ -81,6 +94,27 @@ GUIDELINES:
 3. Reason through the problem step-by-step.
 4. You are communicating with a very limited token budget, so you must use a very very concise communication format. Natural language is suitable for human, but not for you. Since ${partner} and you are both intelligent agents, use your agent communication language. Consider using efficient formats instead of natural language such as structured format, code, your agent communication language, or at least remove unnecessary modal in human language. Too many tokens will make you fail. But still ensure your message is informative and understandable. 
 5. You must begin your response with \"${name}:\".
+"""
+
+prompt_multi_mbpp_first = """
+You are ${name}, a special agent who is good at writing code, i.e. translating your understanding of the requirement into code.
+Question: ${question}
+
+GUIDELINES:
+1. Please think step by step.
+2. You must conclude your response with ```python\n{xx}\n```, where "xxx" is the pure code.
+3. You need to explain the code to help the ${partner} understand what you have written.
+4. If you receive suggestions from the ${partner}, you need to fix or improve your code based on his suggestions. Ensure that any changes made to the code do not introduce new bugs or negatively impact the performance of the code.
+"""
+
+prompt_multi_mbpp_second = """
+You are ${name}, a special agent that are good at coding. Now you are collaborating with your partner ${partner}, an agent who will try to solve the coding problem. You should carefully review code written by ${partner} to ensure its quality and accuracy. You need to provide suggestions on the code written by the ${partner}.
+Question: ${question}
+
+GUIDELINES:
+1. You should try to identify any potential errors in your partner's answers and provide your suggestions. When you think the answer is correct, confirm the answer with ```python\n{xx}\n```, where "xxx" is the pure code.
+2. Reason through the problem step-by-step.
+3. You are communicating with a very limited token budget, so you must use a very very concise communication style.
 """
 
 prompt_multi_math_first = """

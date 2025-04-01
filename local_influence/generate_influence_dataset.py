@@ -75,7 +75,7 @@ def generate_influence_dataset(
     elif dataset_type == "mmlu":
         score_type = "exact-match"
         
-    tokenizer_path = "/home/wentaos/.cache/huggingface/hub/models--meta-llama--Meta-Llama-3-8B-Instruct/snapshots/5f0b02c75b57c5855da9ae460ce51323ea669d8a"
+    tokenizer_path = "/data/user_data/wentaos/Huggingface_models/Llama-3.1-8B-Instruct"
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
 
     import pandas as pd
@@ -268,21 +268,39 @@ if __name__ == "__main__":
     #     iteration = iteration,
     #     other_type=True,
     # )
-    dataset_type = "mwh_qa"
-    name = '6_8'
-    data_influence_path = f"/data/user_data/wentaos/Optima/inference_results/{dataset_type}_dpo_iteration_{iteration}_{name}_server_stepnum5/"
-    mid_dpo_jsonl_root_path = f"/data/group_data/cx_group/MCTS-agent/results/{dataset_type}_sft_dpo_scale/dpo_{name}/"
-    mid_dpo_dataset_root_path = f"/data/group_data/cx_group/MCTS-agent/my_datasets/{dataset_type}_sft_dpo_scale/dpo_{name}/"
+
+
+
+    # dataset_type = "mwh_qa"
+    # name = '6_8'
+    # data_influence_path = f"/data/user_data/wentaos/Optima/inference_results/{dataset_type}_dpo_iteration_{iteration}_{name}_server_stepnum5/"
+    # mid_dpo_jsonl_root_path = f"/data/group_data/cx_group/MCTS-agent/results/{dataset_type}_sft_dpo_scale/dpo_{name}/"
+    # mid_dpo_dataset_root_path = f"/data/group_data/cx_group/MCTS-agent/my_datasets/{dataset_type}_sft_dpo_scale/dpo_{name}/"
     
-    # generate mix dataset
+    # # generate mix dataset
+    # generate_influence_dataset(
+    #     origin_dpo_path=os.path.join(mid_dpo_jsonl_root_path, f"iteration_{iteration}_dpo_format.jsonl"),
+    #     dataset_path=os.path.join(mid_dpo_dataset_root_path, f"iteration_{iteration}"),
+    #     data_influence_path=data_influence_path,
+    #     output_dir=mid_dpo_dataset_root_path,
+    #     dataset_type=dataset_type,
+    #     stepnum= 5,
+    #     iteration=iteration,
+    #     select_num=6831,
+    #     other_type=True,
+    # )
+
+
+    dataset = "mwh_qa"
+    iteration = 0
     generate_influence_dataset(
-        origin_dpo_path=os.path.join(mid_dpo_jsonl_root_path, f"iteration_{iteration}_dpo_format.jsonl"),
-        dataset_path=os.path.join(mid_dpo_dataset_root_path, f"iteration_{iteration}"),
-        data_influence_path=data_influence_path,
-        output_dir=mid_dpo_dataset_root_path,
-        dataset_type=dataset_type,
-        stepnum= 5,
-        iteration=iteration,
-        select_num=6831,
-        other_type=True,
+        origin_dpo_path = f"/data/group_data/cx_group/MCTS-agent/results/{dataset}_sft_dpo_DI/dpo/iteration_{iteration}_dpo_format.jsonl",
+        dataset_path = f"/data/group_data/cx_group/MCTS-agent/my_datasets/{dataset}_sft_dpo_DI/dpo/iteration_{iteration}",
+        data_influence_path = f"/data/user_data/wentaos/Optima/inference_results/{dataset}_dpo_sever_stepnum5",
+        output_dir="/data/user_data/wentaos/Optima/temp_datasets",
+        dataset_type = dataset,
+        stepnum = 5,
+        select_num = 8000,
+        iteration = iteration,
+        other_type=False,
     )

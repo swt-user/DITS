@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed, ProcessPoolExec
 import multiprocessing
 import re
 import os
+from reward.execution import check_mbpp
 
 app = FastAPI()
 logger = logging.getLogger("ray.serve")
@@ -141,37 +142,37 @@ class RewardModel:
         return loss_total / valid_counts
 
     def ppl(self, texts: list[str]):
-        # with torch.inference_mode():
-        #     inputs = self.tokenizer(
-        #         texts,
-        #         truncation=True,
-        #         padding=True,
-        #         return_tensors="pt",
-        #         max_length=self.reward_model.config.max_position_embeddings,
-        #         add_special_tokens=False,
-        #     ).to("cuda")
-        #     outputs = self.reward_model(**inputs)
-            
-        #     loss = self.calc_example_losses_subbatch(outputs.logits, inputs["input_ids"])
-        #     return loss.cpu().tolist()
-
         with torch.inference_mode():
-            result = []
-            for t in texts:
-                inputs = self.tokenizer(
-                    [t],
-                    truncation=True,
-                    padding=True,
-                    return_tensors="pt",
-                    max_length=self.reward_model.config.max_position_embeddings,
-                    add_special_tokens=False,
-                ).to("cuda")
-                outputs = self.reward_model(**inputs)
+            inputs = self.tokenizer(
+                texts,
+                truncation=True,
+                padding=True,
+                return_tensors="pt",
+                max_length=self.reward_model.config.max_position_embeddings,
+                add_special_tokens=False,
+            ).to("cuda")
+            outputs = self.reward_model(**inputs)
             
-                loss = self.calc_example_losses(outputs.logits, inputs["input_ids"])
-                result.append(loss.cpu().tolist()[0])
+            loss = self.calc_example_losses_subbatch(outputs.logits, inputs["input_ids"])
+            return loss.cpu().tolist()
+
+        # with torch.inference_mode():
+        #     result = []
+        #     for t in texts:
+        #         inputs = self.tokenizer(
+        #             [t],
+        #             truncation=True,
+        #             padding=True,
+        #             return_tensors="pt",
+        #             max_length=self.reward_model.config.max_position_embeddings,
+        #             add_special_tokens=False,
+        #         ).to("cuda")
+        #         outputs = self.reward_model(**inputs)
+            
+        #         loss = self.calc_example_losses(outputs.logits, inputs["input_ids"])
+        #         result.append(loss.cpu().tolist()[0])
         
-        return result
+        # return result
 
 
 # # Create the deployment
@@ -231,6 +232,12 @@ def reward_batch_based_on_deploy(
                     correct_score = (
                         1 if result["answer"].strip().lower() in answers else 0
                     )
+                elif score_type == "code":
+                    correct_score = (
+                        1 
+                        if check_mbpp(result["final_answer"], result["answer"]) 
+                        else 0
+                    )
             else:
                 if score_type == "f1-score":
                     correct_score = cal_f1_score(
@@ -250,6 +257,12 @@ def reward_batch_based_on_deploy(
                             result["answer"].strip().lower(),
                             result["final_answer"].strip().lower(),
                         )
+                        else 0
+                    )
+                elif score_type == "code":
+                    correct_score = (
+                        1 
+                        if check_mbpp(result["final_answer"], result["answer"]) 
                         else 0
                     )
         except:
@@ -486,6 +499,12 @@ def get_score_deploy(
             elif score_type == "exact-match":
                 answers = [answer.strip().lower for answer in result["answer"]]
                 correct_score = 1 if result["answer"].strip().lower() in answers else 0
+            elif score_type == "code":
+                    correct_score = (
+                        1 
+                        if check_mbpp(result["final_answer"], result["answer"]) 
+                        else 0
+                    )
         else:
             if score_type == "f1-score":
                 correct_score = cal_f1_score(
@@ -507,6 +526,12 @@ def get_score_deploy(
                     )
                     else 0
                 )
+            elif score_type == "code":
+                    correct_score = (
+                        1 
+                        if check_mbpp(result["final_answer"], result["answer"]) 
+                        else 0
+                    )
     except:
         correct_score = 0
     token_score = _lambda1 * result["token_count"] / max_token_count

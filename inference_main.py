@@ -13,6 +13,7 @@ from dataloader.dataloader import (
     DataloaderForTrivalQA,
     DataloaderForARC,
     DataloaderForMMLU,
+    DataloaderForMBPP,
 )
 
 import os 
@@ -74,6 +75,12 @@ if __name__ == "__main__":
         loader = DataloaderForMMLU(
             split="auxiliary_train" if args.split == "train" else "test"
         )
+    elif args.dataset_type == "mbpp":
+        print("mbpp")
+        loader = DataloaderForMBPP(
+            split="train" if args.split == "train" else "test"
+        )
+        
     for _ in range(args.skipping):
         loader.sample_once()
     inference(

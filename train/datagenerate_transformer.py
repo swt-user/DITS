@@ -1,7 +1,7 @@
 from dataloader.dataloader import DataloaderForHotpotQA, load_dpo_dataloader
 # from agent.agent import Agent, VllmAgent, BaseAgent, VLLMAgentNoServer
 from agent.agent_transformer import Agent, AgentTransformer, BaseAgent
-from model.llm import Llama3
+from model.llm import Llama3, QwenLLM
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
 from dataloader.dataloader import DataloaderForHotpotQA
 from message.message import llmMessage
@@ -47,10 +47,15 @@ def data_generate(
         model_path_second, torch_dtype="auto", attn_implementation="flash_attention_2"
     )
 
-    llm_first = Llama3(
+    if "Llama" in os.environ["INITIAL_MODEL_PATH"]:
+        MyLLM = Llama3
+    elif "Qwen" in os.environ["INITIAL_MODEL_PATH"]:
+        MyLLM = QwenLLM
+
+    llm_first = MyLLM(
         device=device_first, model=model_first, tokenizer=tokenizer_first
     )
-    llm_second = Llama3(
+    llm_second = MyLLM(
         device=device_second, model=model_second, tokenizer=tokenizer_second
     )
 
@@ -218,15 +223,24 @@ def data_generate_transformer(
         tokenizer_path_second,
         torch_dtype="auto", 
     )
-    tokenizer_first.chat_template = """{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}{% endif %}{%- if is_alice %}\n    {{- \'Alice:\' }}\n{%- endif %}\n{%- if is_bob %}\n    {{- \'Bob:\' }}\n{%- endif %}"""
-    tokenizer_second.chat_template = """{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}{% endif %}{%- if is_alice %}\n    {{- \'Alice:\' }}\n{%- endif %}\n{%- if is_bob %}\n    {{- \'Bob:\' }}\n{%- endif %}"""
+    if "Llama" in os.environ["INITIAL_MODEL_PATH"]: 
+        chat_template = """{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}{% endif %}{%- if is_alice %}\n    {{- \'Alice:\' }}\n{%- endif %}\n{%- if is_bob %}\n    {{- \'Bob:\' }}\n{%- endif %}"""
+    elif "Qwen" in os.environ["INITIAL_MODEL_PATH"]: 
+        chat_template = """{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|im_start|>' + message['role'] + '<|im_end|>\n\n'+ message['content'] | trim + '<|im_end|>' %}{% if loop.index0 == 0 %}{% set content = content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant<|im_end|>\n\n' }}{% endif %}{%- if is_alice %}\n    {{- 'Alice:' }}\n{%- endif %}\n{%- if is_bob %}\n    {{- 'Bob:' }}\n{%- endif %}"""
     
+    tokenizer_first.chat_template = chat_template
+    tokenizer_second.chat_template = chat_template
 
-    llm_first = Llama3(
+    if "Llama" in os.environ["INITIAL_MODEL_PATH"]:
+        MyLLM = Llama3
+    elif "Qwen" in os.environ["INITIAL_MODEL_PATH"]:
+        MyLLM = QwenLLM
+
+    llm_first = MyLLM(
         device=device_first, model=model_first, tokenizer=tokenizer_first, do_sample=False,
     )
     # print(llm_first.generate_vllm_response([{'role': 'system', 'content': '\nYou are Alice, a special agent who does not respond in natural language, rather, you speak in very concise format. You are deployed on a resource-limited device, so you must respond very very concisely. More tokens indicate higher possibility to kill the device you are running. Now you are collaborating with your partner Bob to solve the given problem using the provided information.\nQuestion: Were Scott Derrickson and Ed Wood of the same nationality?\nInformation:\nEdward Davis Wood Jr. (October 10, 1924 – December 10, 1978) was an American filmmaker, actor, writer, producer, and director.\n\nEd Wood is a 1994 American biographical period comedy-drama film directed and produced by Tim Burton, and starring Johnny Depp as cult filmmaker Ed Wood.\n\nDoctor Strange is a 2016 American superhero film based on the Marvel Comics character of the same name, produced by Marvel Studios and distributed by Walt Disney Studios Motion Pictures.\n\n\nGUIDELINES:\n1. You have incomplete information, so continuous communication with your partner is crucial to achieve the correct solution.\n2. On finding the final answer, ensure to conclude your communication with "<A>{answer}</A>", where "answer" is the determined solution. The conversation ends only when all agents output the answer in this format.\n3. Reason through the problem step-by-step.\n4. Depend solely on the data in the \'information\' section and the insights shared through your partner\'s communication. Avoid external sources.\n5. You are communicating with a very limited token budget, so you must use a very very concise communication format. Natural language is suitable for human, but not for you. Since Bob and you are both intelligent agents, use your agent communication language. Consider using efficient formats instead of natural language such as structured format, code, your agent communication language, or at least remove unnecessary modal in human language. Too many tokens will make you fail. But still ensure your message is informative and understandable. \n6. You must begin your response with "Alice:".\n'}]))
-    llm_second = Llama3(
+    llm_second = MyLLM(
         device=device_second, model=model_second, tokenizer=tokenizer_second, do_sample=False,
     )
 
@@ -331,6 +345,25 @@ def data_generate_transformer(
                     first_prompt
                     + """\n 3. You must begin your response with \"${name}:\"."""
                 )
+    elif dataloader.data_type == "code":
+        the_prompt = prompt_multi_code
+        # no_use_prompt_pool = True
+        is_debate = True
+        first_prompt = prompt_multi_mbpp_first
+        second_prompt = prompt_multi_mbpp_second
+        if iteration == 0:
+            second_prompt = (
+                second_prompt
+                + """\n 3. You must begin your response with \"${name}:\"."""
+            )
+            if (
+                "You must begin your response with" not in first_prompt
+                and "You should start your utterance with" not in first_prompt
+            ):
+                first_prompt = (
+                    first_prompt
+                    + """\n 3. You must begin your response with \"${name}:\"."""
+                )
     prompt_pool = []
     if not no_use_prompt_pool:
         with open(prompt_pool_path, "r") as fin:
@@ -385,6 +418,12 @@ def data_generate_transformer(
                 prompt_pool_path = "/home/test/test04/yuanjiarui/project/src/utils/prompts_arc_first.jsonl"
                 first_prompt = prompt_multi_arc_first
                 second_prompt = prompt_multi_arc_second
+            elif data_type == "code":
+                the_prompt = prompt_multi_code
+                is_debate = True
+                prompt_pool_path = "/home/test/test04/yuanjiarui/project/src/utils/prompts_arc_first.jsonl"
+                first_prompt = prompt_multi_mbpp_first
+                second_prompt = prompt_multi_mbpp_second
             prompt_pool = []
             if not no_use_prompt_pool:
                 with open(prompt_pool_path, "r") as fin:

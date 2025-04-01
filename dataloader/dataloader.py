@@ -19,7 +19,8 @@ from utils.config import (
     math_path,
     gsm8k_math,
     arc_path,
-    mmlu_path
+    mmlu_path,
+    mbpp_path,
 )
 split_map = {
     "train": {
@@ -30,6 +31,7 @@ split_map = {
         "math": "train",
         "trival_qa": "train",
         "arc": "train",
+        "mbpp": "train",
     },
     "test": {
         "hotpot_qa": "validation",
@@ -39,6 +41,7 @@ split_map = {
         "math": "test",
         "trival_qa": "validation",
         "arc": "test",
+        "mbpp": "test",
     },
 }
 
@@ -282,6 +285,42 @@ class DataloaderForGSM8K(BaseDataloader):
         splited_answer = [answer.strip() for answer in data["answer"].split("####")]
         solving_process = splited_answer[0]
         answer = splited_answer[1].strip()
+        self.current_task_id += 1
+        if self.current_task_id >= self.total:
+            self.current_task_id = 0
+        return question, answer, [], []
+
+
+class DataloaderForMBPP(BaseDataloader):
+    def __init__(
+        self,
+        dataset: str = mbpp_path,
+        name: str = "main",
+        split: str = "train",
+        current_id = 0,
+    ):
+        self.dataset = dataset
+        self.name = name
+        self.split = split
+        self.train_set = load_dataset(
+            "mbpp",
+            # name=name,
+            split=split,
+            trust_remote_code=True,
+        )
+        self.data_type = "code"
+        self.dataset_name = "mbpp"
+
+        self.total = len(self.train_set)
+        self.current_task_id: int = current_id
+
+    def sample_once(self):
+        data = self.train_set[self.current_task_id]
+        question = ">>> Problem:\n{}\n>>> Test Cases:\n{}\n".format(data["text"].strip(), "\n".join(data["test_list"]))
+        # splited_answer = [answer.strip() for answer in data["answer"].split("####")]
+        # solving_process = splited_answer[0]
+        # answer = splited_answer[1].strip()
+        answer = data["test_list"]
         self.current_task_id += 1
         if self.current_task_id >= self.total:
             self.current_task_id = 0
@@ -884,6 +923,7 @@ def process_dpo_format_to_dataset(dpo_format_data_path: str, output_path: str):
         DatasetDict: The processed dataset with training and testing splits saved to disk.
     """
     dataset_dict = {"chosen": [], "rejected": []}
+    print("DPO dataset generation Begin")
     with open(dpo_format_data_path, "r") as fin:
         for line in fin:
             data = json.loads(line)

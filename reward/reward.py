@@ -15,6 +15,7 @@ import subprocess
 import re
 from collections import Counter
 from answerParser.parser import is_equiv
+from reward.execution import check_mbpp
 
 file_lock = threading.Lock()
 
@@ -201,6 +202,12 @@ def reward_batch(
                             result["answer"].strip().lower(),
                             result["final_answer"].strip().lower(),
                         )
+                        else 0
+                    )
+                elif score_type == "code":
+                    correct_score = (
+                        1 
+                        if check_mbpp(result["final_answer"], result["answer"]) 
                         else 0
                     )
         except:
@@ -516,6 +523,7 @@ def result_stats(input_path: str, tokenizer, score_type, is_consistence: bool = 
     average_rouge = 0
     average_token = 0
     count = 0
+    # print(score_type)
     with open(input_path, "r") as f:
         for line in f:
             try:
@@ -538,6 +546,8 @@ def result_stats(input_path: str, tokenizer, score_type, is_consistence: bool = 
                     continue
 
                 tmp_average_token += result["token_count"]
+                # print(result["final_answer"])
+                # print(result["answer"])
                 try:
                     if isinstance(result["answer"], list):
                         if score_type == "f1-score":
@@ -553,6 +563,13 @@ def result_stats(input_path: str, tokenizer, score_type, is_consistence: bool = 
                             correct_score = (
                                 1
                                 if result["final_answer"].strip().lower() in answers
+                                else 0
+                            )
+                        elif score_type == "code":
+                            
+                            correct_score = (
+                                1 
+                                if check_mbpp(result["final_answer"], result["answer"]) 
                                 else 0
                             )
                     else:
@@ -597,6 +614,13 @@ def result_stats(input_path: str, tokenizer, score_type, is_consistence: bool = 
                                     == result["final_answer"].strip().lower()
                                     else 0
                                 )
+                        elif score_type == "code":
+                            print('---------------------------------------------------------')
+                            correct_score = (
+                                1 
+                                if check_mbpp(result["final_answer"], result["answer"]) 
+                            else 0
+                        )
                 except:
                     correct_score = 0
                 tmp_average_rouge += correct_score
@@ -670,6 +694,12 @@ def result_stats_byid(input_path: str, tokenizer, score_type, is_consistence: bo
                                     if result["final_answer"].strip().lower() in answers
                                     else 0
                                 )
+                            elif score_type == "code":
+                                correct_score = (
+                                    1 
+                                    if check_mbpp(result["final_answer"], result["answer"]) 
+                                    else 0
+                                )
                         else:
                             if score_type == "f1-score":
                                 correct_score = cal_f1_score(
@@ -712,6 +742,12 @@ def result_stats_byid(input_path: str, tokenizer, score_type, is_consistence: bo
                                         == result["final_answer"].strip().lower()
                                         else 0
                                     )
+                            elif score_type == "code":
+                                correct_score = (
+                                    1 
+                                    if check_mbpp(result["final_answer"], result["answer"]) 
+                                    else 0
+                                )
                     except:
                         correct_score = 0
                     tmp_average_rouge += correct_score

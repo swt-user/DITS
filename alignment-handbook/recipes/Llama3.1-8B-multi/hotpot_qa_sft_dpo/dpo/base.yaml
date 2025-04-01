@@ -1,6 +1,6 @@
-model_name_or_path: /home/wentaos/.cache/huggingface/hub/models--meta-llama--Meta-Llama-3-8B-Instruct/snapshots/5f0b02c75b57c5855da9ae460ce51323ea669d8a
+model_name_or_path: /data/user_data/wentaos/Huggingface_models/Llama-3.1-8B-Instruct
 model_revision: main
-tokenizer_name_or_path: /home/wentaos/.cache/huggingface/hub/models--meta-llama--Meta-Llama-3-8B-Instruct/snapshots/5f0b02c75b57c5855da9ae460ce51323ea669d8a # Custom tokenizer with <|im_start|> and <|im_end|> tokens
+tokenizer_name_or_path: /data/user_data/wentaos/Huggingface_models/Llama-3.1-8B-Instruct # Custom tokenizer with <|im_start|> and <|im_end|> tokens
 torch_dtype: bfloat16
 use_flash_attention_2: true
 dataset_mixer:

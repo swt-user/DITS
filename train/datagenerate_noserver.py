@@ -201,9 +201,13 @@ def vllm_data_generate_noserver(
         tokenizer_path_second,
         torch_dtype="auto", 
     )
-    tokenizer_first.chat_template = """{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}{% endif %}{%- if is_alice %}\n    {{- \'Alice:\' }}\n{%- endif %}\n{%- if is_bob %}\n    {{- \'Bob:\' }}\n{%- endif %}"""
-    tokenizer_second.chat_template = """{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}{% endif %}{%- if is_alice %}\n    {{- \'Alice:\' }}\n{%- endif %}\n{%- if is_bob %}\n    {{- \'Bob:\' }}\n{%- endif %}"""
+    if "Llama" in os.environ["INITIAL_MODEL_PATH"]: 
+        chat_template = """{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}{% endif %}{%- if is_alice %}\n    {{- \'Alice:\' }}\n{%- endif %}\n{%- if is_bob %}\n    {{- \'Bob:\' }}\n{%- endif %}"""
+    elif "Qwen" in os.environ["INITIAL_MODEL_PATH"]: 
+        chat_template = """{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|im_start|>' + message['role'] + '<|im_end|>\n\n'+ message['content'] | trim + '<|im_end|>' %}{% if loop.index0 == 0 %}{% set content = content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant<|im_end|>\n\n' }}{% endif %}{%- if is_alice %}\n    {{- 'Alice:' }}\n{%- endif %}\n{%- if is_bob %}\n    {{- 'Bob:' }}\n{%- endif %}"""
     
+    tokenizer_first.chat_template = chat_template
+    tokenizer_second.chat_template = chat_template
 
     llm_first = Llama3(
         device=device_first, model=model_first, tokenizer=tokenizer_first
@@ -314,6 +318,25 @@ def vllm_data_generate_noserver(
                     first_prompt
                     + """\n 3. You must begin your response with \"${name}:\"."""
                 )
+    elif dataloader.data_type == "code":
+        the_prompt = prompt_multi_code
+        # no_use_prompt_pool = True
+        is_debate = True
+        first_prompt = prompt_multi_mbpp_first
+        second_prompt = prompt_multi_mbpp_second
+        if iteration == 0:
+            second_prompt = (
+                second_prompt
+                + """\n 3. You must begin your response with \"${name}:\"."""
+            )
+            if (
+                "You must begin your response with" not in first_prompt
+                and "You should start your utterance with" not in first_prompt
+            ):
+                first_prompt = (
+                    first_prompt
+                    + """\n 3. You must begin your response with \"${name}:\"."""
+                )
     prompt_pool = []
     if not no_use_prompt_pool:
         with open(prompt_pool_path, "r") as fin:
@@ -368,6 +391,12 @@ def vllm_data_generate_noserver(
                 prompt_pool_path = "/home/test/test04/yuanjiarui/project/src/utils/prompts_arc_first.jsonl"
                 first_prompt = prompt_multi_arc_first
                 second_prompt = prompt_multi_arc_second
+            elif data_type == "code":
+                the_prompt = prompt_multi_code
+                is_debate = True
+                prompt_pool_path = "/home/test/test04/yuanjiarui/project/src/utils/prompts_arc_first.jsonl"
+                first_prompt = prompt_multi_mbpp_first
+                second_prompt = prompt_multi_mbpp_second
             prompt_pool = []
             if not no_use_prompt_pool:
                 with open(prompt_pool_path, "r") as fin:
@@ -533,6 +562,8 @@ def vllm_data_generate_once(
             score_type = "exact-match"
         elif data_type == "math":
             score_type = "exact-match"
+        elif data_type == "code":
+            score_type = "code"
 
         results_list.append(
             {

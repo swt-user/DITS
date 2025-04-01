@@ -56,21 +56,24 @@ if __name__ == "__main__":
         args.model_path, torch_dtype="auto", attn_implementation="flash_attention_2"
     )
 
-    while True:
-        try:
-            ret = requests.post(
-                "http://localhost:8000/ppl", json={"texts": ["hi hi" * 5000]}
-            )
-            if ret.status_code == 200:
-                break
-        except:
-            continue
+    
 
     if args.score != 0:
         if args.use_vllm != 1:
             model = None
             startTime = time.time()
             if args.deploy == 1:
+
+                while True:
+                    try:
+                        ret = requests.post(
+                            "http://localhost:8000/ppl", json={"texts": ["hi hi" * 5000]}
+                        )
+                        if ret.status_code == 200:
+                            break
+                    except:
+                        continue
+                    
                 process_raw_conversation_data_based_on_deploy(
                     model_url="http://localhost:8000/ppl",
                     tokenizer=tokenizer,
